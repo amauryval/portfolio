@@ -5,6 +5,8 @@ import { Subscription } from 'rxjs';
 import Map from 'ol/Map';
 import Feature from 'ol/Feature';
 import VectorLayer from 'ol/layer/Vector';
+import Cluster from 'ol/source/Cluster';
+
 import VectorSource from 'ol/source/Vector';
 import Point from 'ol/geom/Point';
 import Select from 'ol/interaction/Select';
@@ -254,8 +256,14 @@ export class MapViewComponent implements OnInit, OnDestroy  {
   initLayer(layerName: string, style: Function): void  {
     this.sourceFeatures = new VectorSource();
 
-    const vectorLayer = new VectorLayer({
+    const clusterSource = new Cluster({
+      // minDistance: 1000,
+      distance: 5,
       source: this.sourceFeatures,
+    });
+
+    const vectorLayer = new VectorLayer({
+      source: clusterSource,
       style: (feature: any, _: any): any => {
         return style(feature)
       }
@@ -270,7 +278,7 @@ export class MapViewComponent implements OnInit, OnDestroy  {
       multi: false,
       layers: [vectorLayer],
       style: (feature: any) => {
-        let radius = feature.get("radius")
+        let radius = feature.get("features")[0].get("radius")
         var selectedStyle = activitySelectedStyle(radius)
         return selectedStyle;
       }
@@ -281,7 +289,7 @@ export class MapViewComponent implements OnInit, OnDestroy  {
       const deSelected = evt.deselected
       // WARNING not refactoring needed ! because we can have both selected and deselected
       if (deSelected.length === 1) {
-        let deSelectedFeature = deSelected[0]
+        let deSelectedFeature = deSelected[0].get('features')[0]
         this.currentFeatureSelectedId = null
         this.mapService.unsetMapEvent("mapCoords")
         d3.select('#popup-feature-' + deSelectedFeature.get("id"))
@@ -293,13 +301,18 @@ export class MapViewComponent implements OnInit, OnDestroy  {
 
       }
       if (selected.length === 1) {
-        let selectedFeature = selected[0]
+        let selectedFeature = selected[0].get('features')[0]
         this.currentFeatureSelectedId = selectedFeature.get("id")
-        this.mapService.setMapEvent("mapCoords")
+        // if (this.currentFeatureSelectedId !== undefined) {
+          this.mapService.setMapEvent("mapCoords")
 
-        d3.select('#popup-feature-' + selectedFeature.get("id"))
-          .style('z-index', '1')
-        this._handleActivityCircleOnLegend(selectedFeature)
+          d3.select('#popup-feature-' + selectedFeature.get("id"))
+            .style('z-index', '1')
+          this._handleActivityCircleOnLegend(selectedFeature)
+        // }
+
+        
+
       }
 
     });

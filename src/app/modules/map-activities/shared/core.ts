@@ -4,6 +4,7 @@ import { Style } from "ol/style";
 import CircleStyle from "ol/style/Circle";
 import Fill from "ol/style/Fill";
 import Stroke from "ol/style/Stroke";
+import Text from "ol/style/Text";
 
 
 export const activityLayerName = "activities"
@@ -16,7 +17,26 @@ export const travelNodespeed = 100;
 // TODO refactor these color values on app.component...
 export const strokeColor = 'white';
 const strokeWidth = 2;
-const radiusMultiplier = 2;
+const radiusMultiplier = 1.7;
+
+const textFill = new Fill({
+  color: '#fff',
+});
+const textStroke = new Stroke({
+  color: 'rgba(0, 0, 0, 0.6)',
+  width: 3,
+});
+
+const clusterCircleStyle = new CircleStyle({
+  radius: 0,
+  fill: new Fill({
+    color: "rgb(135,62,35, 0.7)",
+  }),
+  stroke: new Stroke({
+    color: strokeColor,
+    width: strokeWidth,
+  })
+})
 
 const jobCircleStyle = new CircleStyle({
   radius: 0,
@@ -40,9 +60,6 @@ const educationCircleStyle = new CircleStyle({
     })
   })
 
-
-
-
 const volunteerCircleStyle = new CircleStyle({
   radius: 0,
   fill: new Fill({
@@ -54,23 +71,40 @@ const volunteerCircleStyle = new CircleStyle({
   })
 })
 
-export function activitiesStyle(properties: any): Style {
+export function activitiesStyle(properties: any): any {
+
   let styleBuilt!: CircleStyle;
+  const size = properties.get('features').length;
+  if (size == 1) {
+    if (properties.get('features')[0].get('type') === "job") {
+      styleBuilt = jobCircleStyle.clone()
+    } else if (properties.get('features')[0].get('type') === "education") {
+      styleBuilt = educationCircleStyle.clone()
+    } else {
+      styleBuilt = volunteerCircleStyle.clone()
+    }
 
-  if (properties.get('type') === "job") {
-    styleBuilt = jobCircleStyle.clone()
-  } else if (properties.get('type') === "education") {
-    styleBuilt = educationCircleStyle.clone()
+    let radius = properties.get('features')[0].get('radius') * radiusMultiplier
+    styleBuilt.setRadius(radius)
+
+    return new Style({
+      image: styleBuilt
+    })
   } else {
-    styleBuilt = volunteerCircleStyle.clone()
+    let radius = 20
+    properties.get('features').forEach((element: any) => {
+      radius = radius + element.get('radius')
+    })
+    clusterCircleStyle.setRadius(radius)
+    return new Style({
+        image: clusterCircleStyle,
+        text: new Text({
+          text: size.toString(),
+          fill: textFill,
+          stroke: textStroke,
+        })
+      })
   }
-
-  let radius = properties.get('radius') * radiusMultiplier
-  styleBuilt.setRadius(radius)
-
-  return new Style({
-    image: styleBuilt
-  })
 };
 
 
